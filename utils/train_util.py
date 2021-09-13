@@ -23,7 +23,9 @@ class LabelSmoothCELoss(nn.Module):
 
         return loss
 
-def train(net, epochs, lr, train_loader, test_loader, save_info='./', save_acc=80.0, start_epoch=0, device='cuda', log_every_n=50, **kargs):
+def train(net, epochs, lr, train_loader, test_loader, save_info='./', save_acc=80.0, 
+          start_epoch=0, device='cuda', log_every_n=50, 
+          label_smoothing=0, warmup_step=0, warm_lr=10e-5):
     """
     Training a network
     :param net: Network for training
@@ -31,7 +33,7 @@ def train(net, epochs, lr, train_loader, test_loader, save_info='./', save_acc=8
     :param batch_size: Batch size for training.
     """
     #print('==> Preparing data..')
-    criterion = LabelSmoothCELoss(kargs["label_smoothing"])
+    criterion = LabelSmoothCELoss(label_smoothing)
 
     criterion = nn.CrossEntropyLoss()
 
@@ -39,7 +41,7 @@ def train(net, epochs, lr, train_loader, test_loader, save_info='./', save_acc=8
     #scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[int(epochs*0.5), int(epochs*0.75)], gamma=0.1)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs, eta_min=0)
 
-    warmup_scheduler = linear_warmup_scheduler(optimizer, kargs["warmup_step"], kargs["warm_lr"], lr)
+    warmup_scheduler = linear_warmup_scheduler(optimizer, warmup_step, warm_lr, lr)
   
     #best_acc = 0  # best test accuracy
     for epoch in range(start_epoch, epochs):
@@ -103,8 +105,6 @@ def train(net, epochs, lr, train_loader, test_loader, save_info='./', save_acc=8
                 correct += predicted.eq(targets).sum().item()
         num_val_steps = len(test_loader)
         val_acc = correct / total
-        if(kargs.__contains__("ablation") and kargs["ablation"][0]<val_acc):
-            kargs["ablation"][0]=val_acc
 
         if val_acc*100 > save_acc:
             save_acc = val_acc*100

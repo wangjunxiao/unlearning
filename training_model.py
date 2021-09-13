@@ -7,31 +7,25 @@ import torch
 import torchvision
 from torchvision import transforms
 from torch.backends import cudnn
-from utils.train_util import load_model_pytorch, train, test
+from utils.train_util import load_model_pytorch, train
 from nets.resnet_cifar import ResNet_CIFAR
 from nets.vgg import VGG_CIFAR
-from cdp import acculumate_feature, calculate_cdp, \
-    get_threshold_by_sparsity, TFIDFPruner
 
 #%%
 '''
     Configuration
 '''
-parser = argparse.ArgumentParser(description='Class Pruning')
+parser = argparse.ArgumentParser(description='Training model')
 parser.add_argument('--dataset', type=str, default='cifar10',
                     help='cifar10 or imagenet')
 parser.add_argument('--dataroot', type=str, metavar='PATH',
                     help='Path to Dataset folder')
 parser.add_argument('--model', type=str, default='resnet56',
                     help='model to use, only resnet56, resnet20')
-parser.add_argument('--pretrained_dir', type=str, default=None,
-                    help='pretrained file path')
+parser.add_argument('--pretrained', type=int, default=0,
+                    help='whether to use pretrained model')
 parser.add_argument('--batch_size', type=int, default=128,
                     help='input batch size for statistics (default: 128)')
-parser.add_argument('--stop_batch', type=int, default=200, 
-                    help="Sample batch number (default: 200)")
-parser.add_argument('--search_batch_size', type=int, default=256,
-                    help='input batch size for search (default: 256)')
 parser.add_argument('--test_batch_size', type=int, default=256,
                     help='input batch size for testing (default: 256)')
 parser.add_argument('--gpus', default=None, 
@@ -41,13 +35,9 @@ parser.add_argument('-j', '--workers', default=8, type=int, metavar='N',
 parser.add_argument('--seed', type=int, default=0, 
                     help='random seed (default: 0)')
 parser.add_argument('--epochs', type=int, default=300,
-                    help='epochs to fine tune (default: 300)')
-parser.add_argument('--unlearn_class', type=int,
-                    help='class label to unlearn')
-parser.add_argument('--coe', type=int,
-                    help='whether to use balance coefficient')
-parser.add_argument('--sparsity', type=float, default=0.39,
-                    help='target overall target sparsity')
+                    help='epochs to train (default: 300)')
+parser.add_argument('--lr', type=float, default=0.1,
+                    help='learning rate to train (default: 0.1)')
 parser.add_argument('--save_acc', type=float, default=94.0,
                     help='save accuracy')
 parser.add_argument('--savepath', type=str, default='./ckpt/',
@@ -61,43 +51,22 @@ def setup_seed(seed):
      random.seed(seed)
      cudnn.deterministic = True
 
-def load_model_CIFAR10(args):
-    if args.model == 'resnet56':
-        net = ResNet_CIFAR(depth=56, num_classes=10)
-        model_path = './models/resnet56_base/checkpoint/model_best.pth.tar'
-    elif args.model == 'resnet20':
-        net = ResNet_CIFAR(depth=20, num_classes=10)
-        model_path = './models/resnet20_base/checkpoint/model_best.pth.tar'
-    elif args.model == 'vgg':
-        net = VGG_CIFAR(num_classes=10)
-        model_path = './models/vgg_base/checkpoint/model_best.pth.tar'
-    else:
-        print('no model')
-        return
-    if args.pretrained_dir:
-        model_path = args.pretrained_dir
-    net = net.cuda()
-    load_model_pytorch(net, model_path, args.model)
-    return net
 
-def Class_Pruning():
+def Training():
     '''configuration'''
     args = parser.parse_args()
     args.dataset = 'cifar10'
     project_dir = Path(__file__).resolve().parent
     args.dataroot = project_dir / 'data'
     args.model = 'resnet20'
-    args.pretrained_dir = project_dir / 'ckpt' / 'base' / 'resnet20_model_base.th'
+    args.pretrained = 0
     args.gpus = 0
     args.j = 4
-    args.stop_batch = 1
-    args.unlearn_class = 9
-    args.sparsity = 0.5
-    #args.coe = 0
+    args.epochs = 1
+    args.lr = 0.1
     print(args)
     setup_seed(args.seed)
     save_file = '_'.join([str(args.model),
-                      'coe{}'.format(args.coe),
                       'seed{}'.format(args.seed)
                       ])
     args.savepath=os.path.join(args.savepath,args.model)
@@ -120,25 +89,30 @@ def Class_Pruning():
             ])
         trainset = torchvision.datasets.CIFAR10(root=args.dataroot, train=True, download=False, transform=transform_train)
         testset = torchvision.datasets.CIFAR10(root=args.dataroot, train=False, download=False, transform=transform_test)
-        net = load_model_CIFAR10(args)
         
+        if args.model == 'resnet56':
+            net = ResNet_CIFAR(depth=56, num_classes=10)
+            model_path = './models/resnet56_base/checkpoint/model_best.pth.tar'
+        elif args.model == 'resnet20':
+            net = ResNet_CIFAR(depth=20, num_classes=10)
+            model_path = './models/resnet20_base/checkpoint/model_best.pth.tar'
+        elif args.model == 'vgg':
+            net = VGG_CIFAR(num_classes=10)
+            model_path = './models/vgg_base/checkpoint/model_best.pth.tar'
+        else:
+            print('no model')
+        if args.pretrained == 1:
+            load_model_pytorch(net, model_path, args.model)
+
+    net = net.cuda()
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=False, num_workers=4)
-    train_all_loader = torch.utils.data.DataLoader(trainset, batch_size=args.search_batch_size, shuffle=False, num_workers=4)
     testloader = torch.utils.data.DataLoader(testset, batch_size=args.test_batch_size, shuffle=False, num_workers=4)
     
-    '''pre-processing'''
-    feature_iit, classes = acculumate_feature(net, train_all_loader, args.stop_batch)
-    tf_idf_map = calculate_cdp(feature_iit, classes, args.dataset, args.coe, unlearn_class=args.unlearn_class)
-    threshold = get_threshold_by_sparsity(tf_idf_map, args.sparsity)
-    print('threshold', threshold)
+    '''training''' 
+    train(net, epochs=args.epochs, lr=args.lr, train_loader=trainloader, test_loader=testloader, save_info=save_info, save_acc=save_acc)
 
-    '''pruning''' 
-    test(net, testloader)
-    
-    
-    
     
     print('fuck')
 
 if __name__=='__main__':
-    Class_Pruning()
+    Training()
