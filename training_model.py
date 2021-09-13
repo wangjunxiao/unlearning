@@ -1,4 +1,3 @@
-import os
 import random
 import argparse
 from pathlib import Path
@@ -42,6 +41,13 @@ parser.add_argument('--save_acc', type=float, default=94.0,
                     help='save accuracy')
 parser.add_argument('--savepath', type=str, default='./ckpt/',
                     help='model save directory')
+parser.add_argument('--label_smoothing', type=float, default='0.0',
+                    help='label smoothing rate')
+parser.add_argument('--warmup_step', type=int, default='0',
+                    help='warm up epochs')
+parser.add_argument('--warm_lr', type=float, default='10e-5',
+                    help='warm up learning rate')
+
 
 def setup_seed(seed):
      torch.manual_seed(seed)
@@ -62,15 +68,16 @@ def Training():
     args.pretrained = 0
     args.gpus = 0
     args.j = 4
-    args.epochs = 1
+    args.epochs = 10
     args.lr = 0.1
+    args.save_acc = 0.0
+    args.label_smoothing = 0.0 
+    args.warmup_step = 0
+    args.warm_lr = 10e-5
     print(args)
+    
     setup_seed(args.seed)
-    save_file = '_'.join([str(args.model),
-                      'seed{}'.format(args.seed)
-                      ])
-    args.savepath=os.path.join(args.savepath,args.model)
-    save_info = os.path.join(args.savepath, save_file)
+    save_info = project_dir / 'ckpt' / args.model
     save_acc = args.save_acc   
     
     if args.dataset == 'cifar10':
@@ -109,9 +116,10 @@ def Training():
     testloader = torch.utils.data.DataLoader(testset, batch_size=args.test_batch_size, shuffle=False, num_workers=4)
     
     '''training''' 
-    train(net, epochs=args.epochs, lr=args.lr, train_loader=trainloader, test_loader=testloader, save_info=save_info, save_acc=save_acc)
+    train(net, epochs=args.epochs, lr=args.lr, train_loader=trainloader, 
+          test_loader=testloader, save_info=save_info, save_acc=save_acc, seed=args.seed,
+          label_smoothing=args.label_smoothing, warmup_step=args.warmup_step, warm_lr=args.warm_lr)
 
-    
     print('fuck')
 
 if __name__=='__main__':

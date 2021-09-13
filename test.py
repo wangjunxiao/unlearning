@@ -16,3 +16,5 @@ print(torch.zeros(2, 3))
 #f = F.relu(aa)
 #print(f.view(2,-1))
 
+save_acc = 34.53434
+print(str(save_acc)[0:5])

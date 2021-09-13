@@ -142,4 +142,4 @@ cython_debug/
 data/
 
 #model checkpoint
-model/
+ckpt/

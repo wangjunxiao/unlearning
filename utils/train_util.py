@@ -23,7 +23,7 @@ class LabelSmoothCELoss(nn.Module):
 
         return loss
 
-def train(net, epochs, lr, train_loader, test_loader, save_info='./', save_acc=80.0, 
+def train(net, epochs, lr, train_loader, test_loader, save_info='./', save_acc=80.0, seed=0,
           start_epoch=0, device='cuda', log_every_n=50, 
           label_smoothing=0, warmup_step=0, warm_lr=10e-5):
     """
@@ -108,9 +108,9 @@ def train(net, epochs, lr, train_loader, test_loader, save_info='./', save_acc=8
 
         if val_acc*100 > save_acc:
             save_acc = val_acc*100
-            info = save_info+'_'+str(save_acc)[0:5]+'.pth'
-            print(info)
-            torch.save(net.state_dict(), info)
+            save_path = save_info / ('seed_'+str(seed)+'_acc_'+str(save_acc)[0:5]+'.pth')
+            print('save path', save_path)
+            torch.save(net.state_dict(), save_path)
         print("Test Loss=%.8f, Test acc=%.8f" % (test_loss / (num_val_steps), val_acc))
 
 def test(net, testloader):
