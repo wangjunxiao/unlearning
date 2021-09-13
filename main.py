@@ -128,7 +128,8 @@ def Class_Pruning():
         '''pre-processing'''
         feature_iit, classes = acculumate_feature(net, train_all_loader, args.stop_batch)
         tf_idf_map = calculate_cdp(feature_iit, classes, args.dataset, args.coe, unlearn_class=args.unlearn_class)
-        #threshold = get_threshold_by_sparsity(tf_idf_map, args.sparsity)
+        threshold = get_threshold_by_sparsity(tf_idf_map, args.sparsity)
+
     
 
     #flops, param, detail_flops = count_flops_params(net, (1, 3, 32, 32))
