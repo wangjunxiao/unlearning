@@ -74,10 +74,10 @@ def acculumate_feature(model, loader, stop:int):
             handler = m.register_forward_hook(functools.partial(hook, name=name))
             handler_list.append(handler)
     for batch_idx, (inputs, targets) in enumerate(loader):
-        #if batch_idx % (10) == 0:
-        print('batch_idx', batch_idx)
         if batch_idx >= stop:
             break
+        #if batch_idx % (10) == 0:
+        print('batch_idx', batch_idx)
         model.eval()
         classes.extend(targets.numpy())
         with torch.no_grad():

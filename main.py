@@ -42,6 +42,8 @@ parser.add_argument('--seed', type=int, default=0,
                     help='random seed (default: 0)')
 parser.add_argument('--epochs', type=int, default=300,
                     help='epochs to fine tune (default: 300)')
+parser.add_argument('--unlearn_class', type=int,
+                    help='class label to unlearn')
 parser.add_argument('--coe', type=int,
                     help='whether to use balance coefficient')
 parser.add_argument('--sparsity', type=float, default=0.39,
@@ -89,11 +91,11 @@ def Class_Pruning():
     args.gpus = 0
     args.j = 4
     args.stop_batch = 1
+    args.unlearn_class = 9
     args.sparsity = 0.5
     #args.coe = 0
     print(args)
     setup_seed(args.seed)
-    sparsity = args.sparsity
     save_file = '_'.join([str(args.model),
                       'coe{}'.format(args.coe),
                       'seed{}'.format(args.seed)
@@ -125,8 +127,8 @@ def Class_Pruning():
         
         '''pre-processing'''
         feature_iit, classes = acculumate_feature(net, train_all_loader, args.stop_batch)
-        tf_idf_map = calculate_cdp(feature_iit, classes, args.dataset, args.coe, unlearn_class=9)
-        threshold = get_threshold_by_sparsity(tf_idf_map,sparsity)
+        tf_idf_map = calculate_cdp(feature_iit, classes, args.dataset, args.coe, unlearn_class=args.unlearn_class)
+        #threshold = get_threshold_by_sparsity(tf_idf_map, args.sparsity)
     
 
     #flops, param, detail_flops = count_flops_params(net, (1, 3, 32, 32))
