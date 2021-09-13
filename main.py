@@ -88,7 +88,7 @@ def Class_Pruning():
     args.pretrained_dir = project_dir / 'ckpt' / 'base' / 'resnet20_model_base.th'
     args.gpus = 0
     args.j = 4
-    args.stop_batch = 200
+    args.stop_batch = 1
     args.sparsity = 0.5
     #args.coe = 0
     print(args)
@@ -125,11 +125,10 @@ def Class_Pruning():
         
         '''pre-processing'''
         feature_iit, classes = acculumate_feature(net, train_all_loader, args.stop_batch)
-        tf_idf_map = calculate_cdp(feature_iit, classes, args.dataset, args.coe)
-        #threshold = get_threshold_by_sparsity(tf_idf_map,sparsity)
+        tf_idf_map = calculate_cdp(feature_iit, classes, args.dataset, args.coe, unlearn_class=9)
+        threshold = get_threshold_by_sparsity(tf_idf_map,sparsity)
     
-    
-    
+
     #flops, param, detail_flops = count_flops_params(net, (1, 3, 32, 32))
     
     
