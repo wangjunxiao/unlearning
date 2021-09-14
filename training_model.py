@@ -39,8 +39,6 @@ parser.add_argument('--lr', type=float, default=0.1,
                     help='learning rate to train (default: 0.1)')
 parser.add_argument('--save_acc', type=float, default=94.0,
                     help='save accuracy')
-parser.add_argument('--savepath', type=str, default='./ckpt/',
-                    help='model save directory')
 parser.add_argument('--label_smoothing', type=float, default='0.0',
                     help='label smoothing rate')
 parser.add_argument('--warmup_step', type=int, default='0',
@@ -99,16 +97,14 @@ def Training():
         
         if args.model == 'resnet56':
             net = ResNet_CIFAR(depth=56, num_classes=10)
-            model_path = './models/resnet56_base/checkpoint/model_best.pth.tar'
         elif args.model == 'resnet20':
             net = ResNet_CIFAR(depth=20, num_classes=10)
-            model_path = './models/resnet20_base/checkpoint/model_best.pth.tar'
         elif args.model == 'vgg':
             net = VGG_CIFAR(num_classes=10)
-            model_path = './models/vgg_base/checkpoint/model_best.pth.tar'
         else:
             print('no model')
         if args.pretrained == 1:
+            model_path = project_dir / 'ckpt' / args.model / 'seed_0_acc_49.65.pth'
             load_model_pytorch(net, model_path, args.model)
 
     net = net.cuda()
@@ -120,7 +116,7 @@ def Training():
           test_loader=testloader, save_info=save_info, save_acc=save_acc, seed=args.seed,
           label_smoothing=args.label_smoothing, warmup_step=args.warmup_step, warm_lr=args.warm_lr)
 
-    print('fuck')
+    print('finished')
 
 if __name__=='__main__':
     Training()

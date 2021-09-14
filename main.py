@@ -24,8 +24,6 @@ parser.add_argument('--dataroot', type=str, metavar='PATH',
                     help='Path to Dataset folder')
 parser.add_argument('--model', type=str, default='resnet56',
                     help='model to use, only resnet56, resnet20')
-parser.add_argument('--pretrained_dir', type=str, default=None,
-                    help='pretrained file path')
 parser.add_argument('--batch_size', type=int, default=128,
                     help='input batch size for statistics (default: 128)')
 parser.add_argument('--stop_batch', type=int, default=200, 
@@ -42,6 +40,8 @@ parser.add_argument('--seed', type=int, default=0,
                     help='random seed (default: 0)')
 parser.add_argument('--epochs', type=int, default=300,
                     help='epochs to fine tune (default: 300)')
+parser.add_argument('--lr', type=float, default=0.1,
+                    help='learning rate to fine tune (default: 0.1)')
 parser.add_argument('--unlearn_class', type=int,
                     help='class label to unlearn')
 parser.add_argument('--coe', type=int,
@@ -50,8 +50,14 @@ parser.add_argument('--sparsity', type=float, default=0.39,
                     help='target overall target sparsity')
 parser.add_argument('--save_acc', type=float, default=94.0,
                     help='save accuracy')
-parser.add_argument('--savepath', type=str, default='./ckpt/',
-                    help='model save directory')
+parser.add_argument('--label_smoothing', type=float, default='0.0',
+                    help='label smoothing rate')
+parser.add_argument('--warmup_step', type=int, default='0',
+                    help='warm up epochs')
+parser.add_argument('--warm_lr', type=float, default='10e-5',
+                    help='warm up learning rate')
+parser.add_argument('--model_file', type=str,
+                    help='model file name')
 
 def setup_seed(seed):
      torch.manual_seed(seed)
@@ -61,21 +67,17 @@ def setup_seed(seed):
      random.seed(seed)
      cudnn.deterministic = True
 
-def load_model_CIFAR10(args):
+def load_model_CIFAR10(args, project_dir):
     if args.model == 'resnet56':
         net = ResNet_CIFAR(depth=56, num_classes=10)
-        model_path = './models/resnet56_base/checkpoint/model_best.pth.tar'
     elif args.model == 'resnet20':
         net = ResNet_CIFAR(depth=20, num_classes=10)
-        model_path = './models/resnet20_base/checkpoint/model_best.pth.tar'
     elif args.model == 'vgg':
         net = VGG_CIFAR(num_classes=10)
-        model_path = './models/vgg_base/checkpoint/model_best.pth.tar'
     else:
         print('no model')
         return
-    if args.pretrained_dir:
-        model_path = args.pretrained_dir
+    model_path = project_dir / 'ckpt' / args.model / args.model_file
     net = net.cuda()
     load_model_pytorch(net, model_path, args.model)
     return net
@@ -87,21 +89,23 @@ def Class_Pruning():
     project_dir = Path(__file__).resolve().parent
     args.dataroot = project_dir / 'data'
     args.model = 'resnet20'
-    args.pretrained_dir = project_dir / 'ckpt' / 'base' / 'resnet20_model_base.th'
     args.gpus = 0
     args.j = 4
     args.stop_batch = 1
     args.unlearn_class = 9
     args.sparsity = 0.5
-    #args.coe = 0
+    args.coe = 0
+    args.epochs = 10
+    args.lr = 0.1
+    args.save_acc = 0.0
+    args.label_smoothing = 0.0 
+    args.warmup_step = 0
+    args.warm_lr = 10e-5
+    args.model_file = 'seed_0_acc_84.15.pth'
     print(args)
+    
     setup_seed(args.seed)
-    save_file = '_'.join([str(args.model),
-                      'coe{}'.format(args.coe),
-                      'seed{}'.format(args.seed)
-                      ])
-    args.savepath=os.path.join(args.savepath,args.model)
-    save_info = os.path.join(args.savepath, save_file)
+    save_info = project_dir / 'ckpt' / 'pruned' / args.model
     save_acc = args.save_acc   
     
     if args.dataset == 'cifar10':
@@ -120,7 +124,7 @@ def Class_Pruning():
             ])
         trainset = torchvision.datasets.CIFAR10(root=args.dataroot, train=True, download=False, transform=transform_train)
         testset = torchvision.datasets.CIFAR10(root=args.dataroot, train=False, download=False, transform=transform_test)
-        net = load_model_CIFAR10(args)
+        net = load_model_CIFAR10(args, project_dir)
         
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=False, num_workers=4)
     train_all_loader = torch.utils.data.DataLoader(trainset, batch_size=args.search_batch_size, shuffle=False, num_workers=4)
