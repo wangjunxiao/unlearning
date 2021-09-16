@@ -1,4 +1,3 @@
-import os
 import random
 import argparse
 from pathlib import Path
@@ -10,7 +9,7 @@ from torch.backends import cudnn
 from utils.train_util import load_model_pytorch, train, test
 from nets.resnet_cifar import ResNet_CIFAR
 from nets.vgg import VGG_CIFAR
-from cdp import acculumate_feature, calculate_cdp, \
+from class_pruner import acculumate_feature, calculate_cp, \
     get_threshold_by_sparsity, TFIDFPruner
 
 #%%
@@ -95,9 +94,9 @@ def Class_Pruning():
     args.unlearn_class = 9
     args.sparsity = 0.5
     args.coe = 0
-    args.epochs = 10
+    args.epochs = 5
     args.lr = 0.1
-    args.save_acc = 0.0
+    args.save_acc = 50.0
     args.label_smoothing = 0.0 
     args.warmup_step = 0
     args.warm_lr = 10e-5
@@ -132,17 +131,28 @@ def Class_Pruning():
     
     '''pre-processing'''
     feature_iit, classes = acculumate_feature(net, train_all_loader, args.stop_batch)
-    tf_idf_map = calculate_cdp(feature_iit, classes, args.dataset, args.coe, unlearn_class=args.unlearn_class)
+    tf_idf_map = calculate_cp(feature_iit, classes, args.dataset, args.coe, unlearn_class=args.unlearn_class)
     threshold = get_threshold_by_sparsity(tf_idf_map, args.sparsity)
     print('threshold', threshold)
 
     '''pruning''' 
     test(net, testloader)
+    cp_config={ "threshold": threshold, "map": tf_idf_map }
+    config_list = [{
+        'sparsity': args.sparsity,  
+        'op_types': ['Conv2d']
+        }]
+    pruner = TFIDFPruner(net, config_list, cp_config=cp_config)
+    _ = pruner.compress()
     
+    '''fine tuning''' 
+    test(net, testloader)
+    train(net, epochs=args.epochs, lr=args.lr, train_loader=trainloader, 
+          test_loader=testloader, save_info=save_info, save_acc=save_acc, seed=args.seed,
+          label_smoothing=args.label_smoothing, warmup_step=args.warmup_step, warm_lr=args.warm_lr)
     
+    print('finished')
     
-    
-    print('fuck')
-
 if __name__=='__main__':
     Class_Pruning()
+    
