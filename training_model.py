@@ -75,8 +75,7 @@ def Training():
     print(args)
     
     setup_seed(args.seed)
-    save_info = project_dir / 'ckpt' / args.model
-    save_acc = args.save_acc   
+    save_info = project_dir / 'ckpt' / args.model  
     
     if args.dataset == 'cifar10':
         '''load data and model'''
@@ -113,7 +112,7 @@ def Training():
     
     '''training''' 
     train(net, epochs=args.epochs, lr=args.lr, train_loader=trainloader, 
-          test_loader=testloader, save_info=save_info, save_acc=save_acc, seed=args.seed,
+          test_loader=testloader, save_info=save_info, save_acc=args.save_acc, seed=args.seed,
           label_smoothing=args.label_smoothing, warmup_step=args.warmup_step, warm_lr=args.warm_lr)
 
     print('finished')

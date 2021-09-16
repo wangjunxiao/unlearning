@@ -1,3 +1,4 @@
+import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -54,7 +55,7 @@ def train(net, epochs, lr, train_loader, test_loader, save_info='./', save_acc=8
         correct = 0
         total = 0
         for batch_idx, (inputs, targets) in enumerate(train_loader):
-            # 如果 warmup scheduler=None 或者不在 warmup 范围里， if_warmup=False
+            # if warmup scheduler==None or not in scope of warmup -> if_warmup=False
             if_warmup=False if warmup_scheduler==None else warmup_scheduler.if_in_warmup()
 
             inputs, targets = inputs.to(device), targets.to(device)
@@ -62,7 +63,7 @@ def train(net, epochs, lr, train_loader, test_loader, save_info='./', save_acc=8
             outputs = net(inputs)
             loss = criterion(outputs, targets)
             loss.backward()
-            
+
             optimizer.step()
 
             if if_warmup:
@@ -108,13 +109,13 @@ def train(net, epochs, lr, train_loader, test_loader, save_info='./', save_acc=8
 
         if val_acc*100 > save_acc:
             save_acc = val_acc*100
-            save_path = save_info / ('seed_'+str(seed)+'_acc_'+str(save_acc)[0:5]+'.pth')
+            save_path = save_info / ('seed_'+str(seed)+'_acc_'+str(save_acc)[0:5]+
+                                     time.strftime("%Y-%m-%d %H-%M-%S", time.localtime())+'.pth')
             print('save path', save_path)
             torch.save(net.state_dict(), save_path)
         print("Test Loss=%.8f, Test acc=%.8f" % (test_loss / (num_val_steps), val_acc))
 
 def test(net, testloader):
-
     criterion = nn.CrossEntropyLoss()
 
     net.eval()
@@ -171,7 +172,6 @@ def load_model_pytorch(model, load_model, model_name):
             if ind > 10:
                 continue
             #print(key, model.state_dict()[key].shape)
-
         #print("*********")
 
         for ind, (key, item) in enumerate(load_from.items()):
@@ -188,5 +188,3 @@ def load_model_pytorch(model, load_model, model_name):
             load_from[key] = item
 
     model.load_state_dict(load_from, False)
-
-    #epoch_from = -1

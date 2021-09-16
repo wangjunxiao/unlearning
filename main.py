@@ -1,3 +1,4 @@
+import time
 import random
 import argparse
 from pathlib import Path
@@ -66,7 +67,7 @@ def setup_seed(seed):
      random.seed(seed)
      cudnn.deterministic = True
 
-def load_model_CIFAR10(args, project_dir):
+def load_model_CIFAR10(args, model_path):
     if args.model == 'resnet56':
         net = ResNet_CIFAR(depth=56, num_classes=10)
     elif args.model == 'resnet20':
@@ -76,7 +77,6 @@ def load_model_CIFAR10(args, project_dir):
     else:
         print('no model')
         return
-    model_path = project_dir / 'ckpt' / args.model / args.model_file
     net = net.cuda()
     load_model_pytorch(net, model_path, args.model)
     return net
@@ -104,8 +104,9 @@ def Class_Pruning():
     print(args)
     
     setup_seed(args.seed)
-    save_info = project_dir / 'ckpt' / 'pruned' / args.model
-    save_acc = args.save_acc   
+    model_path = project_dir / 'ckpt' / args.model / args.model_file
+    pruned_save_info = project_dir / 'ckpt' / 'pruned' / args.model
+    finetuned_save_info = project_dir / 'ckpt' / 'finetuned' / args.model   
     
     if args.dataset == 'cifar10':
         '''load data and model'''
@@ -123,7 +124,7 @@ def Class_Pruning():
             ])
         trainset = torchvision.datasets.CIFAR10(root=args.dataroot, train=True, download=False, transform=transform_train)
         testset = torchvision.datasets.CIFAR10(root=args.dataroot, train=False, download=False, transform=transform_test)
-        net = load_model_CIFAR10(args, project_dir)
+        net = load_model_CIFAR10(args, model_path)
         
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=False, num_workers=4)
     train_all_loader = torch.utils.data.DataLoader(trainset, batch_size=args.search_batch_size, shuffle=False, num_workers=4)
@@ -143,13 +144,21 @@ def Class_Pruning():
         'op_types': ['Conv2d']
         }]
     pruner = TFIDFPruner(net, config_list, cp_config=cp_config)
-    _ = pruner.compress()
+    pruner.compress()
+    pruned_model_path = pruned_save_info / ('seed_'+str(args.seed)+
+                                            time.strftime("%Y-%m-%d %H-%M-%S", time.localtime())+
+                                            '_model.pth')
+    pruned_mask_path = pruned_save_info / ('seed_'+str(args.seed)+
+                                           time.strftime("%Y-%m-%d %H-%M-%S", time.localtime())+
+                                            '_mask.pth')
+    pruner.export_model(pruned_model_path, pruned_mask_path)
     
-    '''fine tuning''' 
-    test(net, testloader)
-    train(net, epochs=args.epochs, lr=args.lr, train_loader=trainloader, 
-          test_loader=testloader, save_info=save_info, save_acc=save_acc, seed=args.seed,
-          label_smoothing=args.label_smoothing, warmup_step=args.warmup_step, warm_lr=args.warm_lr)
+    '''fine tuning'''
+    pruned_net = load_model_CIFAR10(args, pruned_model_path)
+    test(pruned_net, testloader)
+    #train(net, epochs=args.epochs, lr=args.lr, train_loader=trainloader, 
+    #      test_loader=testloader, save_info=finetuned_save_info, save_acc=args.save_acc, seed=args.seed,
+    #      label_smoothing=args.label_smoothing, warmup_step=args.warmup_step, warm_lr=args.warm_lr)
     
     print('finished')
     
