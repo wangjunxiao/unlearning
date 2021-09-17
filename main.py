@@ -8,6 +8,7 @@ import torchvision
 from torchvision import transforms
 from torch.backends import cudnn
 from utils.train_util import load_model_pytorch, train, test
+from utils.dataloader_util import generate
 from nets.resnet_cifar import ResNet_CIFAR
 from nets.vgg import VGG_CIFAR
 from class_pruner import acculumate_feature, calculate_cp, \
@@ -125,6 +126,7 @@ def Class_Pruning():
         trainset = torchvision.datasets.CIFAR10(root=args.dataroot, train=True, download=False, transform=transform_train)
         testset = torchvision.datasets.CIFAR10(root=args.dataroot, train=False, download=False, transform=transform_test)
         net = load_model_CIFAR10(args, model_path)
+        total_classes = 10 # [0-9]
         
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=False, num_workers=4)
     train_all_loader = torch.utils.data.DataLoader(trainset, batch_size=args.search_batch_size, shuffle=False, num_workers=4)
@@ -136,8 +138,25 @@ def Class_Pruning():
     threshold = get_threshold_by_sparsity(tf_idf_map, args.sparsity)
     print('threshold', threshold)
 
+    '''test before pruning'''
+    list_allclasses = list(range(total_classes))
+    unlearn_listclass = [args.unlearn_class]
+    list_allclasses.remove(args.unlearn_class) # rest classes
+    unlearn_testdata = generate(testset, unlearn_listclass)
+    rest_testdata = generate(testset, list_allclasses)
+    print(len(unlearn_testdata), len(rest_testdata))
+    unlearn_testloader = torch.utils.data.DataLoader(unlearn_testdata, batch_size=args.test_batch_size, 
+                                                     shuffle=False, num_workers=4)
+    rest_testloader = torch.utils.data.DataLoader(rest_testdata, batch_size=args.test_batch_size, 
+                                                     shuffle=False, num_workers=4)
+    print('*'*5+'testing in unlearn_data'+'*'*12)
+    test(net, unlearn_testloader)
+    print('*'*40)
+    print('*'*5+'testing in rest_data'+'*'*15)
+    test(net, rest_testloader)
+    print('*'*40)
     '''pruning''' 
-    test(net, testloader)
+    
     cp_config={ "threshold": threshold, "map": tf_idf_map }
     config_list = [{
         'sparsity': args.sparsity,  
@@ -155,7 +174,7 @@ def Class_Pruning():
     
     '''fine tuning'''
     pruned_net = load_model_CIFAR10(args, pruned_model_path)
-    test(pruned_net, testloader)
+    #test(pruned_net, testloader)
     #train(net, epochs=args.epochs, lr=args.lr, train_loader=trainloader, 
     #      test_loader=testloader, save_info=finetuned_save_info, save_acc=args.save_acc, seed=args.seed,
     #      label_smoothing=args.label_smoothing, warmup_step=args.warmup_step, warm_lr=args.warm_lr)
