@@ -143,3 +143,6 @@ data/
 
 #model checkpoint
 ckpt/
+
+#logging
+log/

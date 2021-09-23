@@ -91,13 +91,13 @@ def Class_Pruning():
     args.model = 'resnet20'
     args.gpus = 0
     args.j = 4
-    args.stop_batch = 1
+    args.stop_batch = 200
     args.unlearn_class = 9
-    args.sparsity = 0.5
+    args.sparsity = 0.05   #cifar10 args.sparsity = 0.05
     args.coe = 0
-    args.epochs = 5
+    args.epochs = 10
     args.lr = 0.1
-    args.save_acc = 50.0
+    args.save_acc = 0.0
     args.label_smoothing = 0.0 
     args.warmup_step = 0
     args.warm_lr = 10e-5
@@ -128,9 +128,9 @@ def Class_Pruning():
         net = load_model_CIFAR10(args, model_path)
         total_classes = 10 # [0-9]
         
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=False, num_workers=4)
+    #trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=False, num_workers=4)
     train_all_loader = torch.utils.data.DataLoader(trainset, batch_size=args.search_batch_size, shuffle=False, num_workers=4)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=args.test_batch_size, shuffle=False, num_workers=4)
+    #testloader = torch.utils.data.DataLoader(testset, batch_size=args.test_batch_size, shuffle=False, num_workers=4)
     
     '''pre-processing'''
     feature_iit, classes = acculumate_feature(net, train_all_loader, args.stop_batch)
@@ -155,8 +155,8 @@ def Class_Pruning():
     print('*'*5+'testing in rest_data'+'*'*15)
     test(net, rest_testloader)
     print('*'*40)
-    '''pruning''' 
     
+    '''pruning''' 
     cp_config={ "threshold": threshold, "map": tf_idf_map }
     config_list = [{
         'sparsity': args.sparsity,  
@@ -171,13 +171,34 @@ def Class_Pruning():
                                            time.strftime("%Y-%m-%d %H-%M-%S", time.localtime())+
                                             '_mask.pth')
     pruner.export_model(pruned_model_path, pruned_mask_path)
+    pruned_net = load_model_CIFAR10(args, pruned_model_path)
+    
+    '''test after pruning'''
+    print('*'*5+'testing in unlearn_data'+'*'*12)
+    test(pruned_net, unlearn_testloader)
+    print('*'*40)
+    print('*'*5+'testing in rest_data'+'*'*15)
+    test(pruned_net, rest_testloader)
+    print('*'*40)
+    
+    #return #for test
     
     '''fine tuning'''
-    pruned_net = load_model_CIFAR10(args, pruned_model_path)
-    #test(pruned_net, testloader)
-    #train(net, epochs=args.epochs, lr=args.lr, train_loader=trainloader, 
-    #      test_loader=testloader, save_info=finetuned_save_info, save_acc=args.save_acc, seed=args.seed,
-    #      label_smoothing=args.label_smoothing, warmup_step=args.warmup_step, warm_lr=args.warm_lr)
+    rest_traindata = generate(trainset, list_allclasses)
+    print(len(rest_traindata))
+    rest_trainloader = torch.utils.data.DataLoader(rest_traindata, batch_size=args.batch_size, 
+                                                     shuffle=False, num_workers=4)
+    train(pruned_net, epochs=args.epochs, lr=args.lr, train_loader=rest_trainloader, 
+          test_loader=rest_testloader, save_info=finetuned_save_info, save_acc=args.save_acc, seed=args.seed,
+          label_smoothing=args.label_smoothing, warmup_step=args.warmup_step, warm_lr=args.warm_lr)
+    
+    '''test after fine-tuning'''
+    print('*'*5+'testing in unlearn_data'+'*'*12)
+    test(pruned_net, unlearn_testloader)
+    print('*'*40)
+    print('*'*5+'testing in rest_data'+'*'*15)
+    test(pruned_net, rest_testloader)
+    print('*'*40)
     
     print('finished')
     

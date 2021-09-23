@@ -1,4 +1,5 @@
 import time
+import logging
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -25,7 +26,7 @@ class LabelSmoothCELoss(nn.Module):
         return loss
 
 def train(net, epochs, lr, train_loader, test_loader, save_info='./', save_acc=80.0, seed=0,
-          start_epoch=0, device='cuda', log_every_n=50, 
+          start_epoch=0, device='cuda',  
           label_smoothing=0, warmup_step=0, warm_lr=10e-5):
     """
     Training a network
@@ -81,8 +82,9 @@ def train(net, epochs, lr, train_loader, test_loader, save_info='./', save_acc=8
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
 
-        print("Train Loss=%.8f, Train acc=%.8f"
-              % (train_loss / (batch_idx + 1), (correct / total)))
+        training_loss = train_loss / (batch_idx + 1)
+        training_acc = correct / total
+        print("Train Loss=%.8f, Train acc=%.8f" % (training_loss, training_acc))
         
         if not warmup_scheduler or not warmup_scheduler.if_in_warmup():
             scheduler.step()
@@ -108,12 +110,19 @@ def train(net, epochs, lr, train_loader, test_loader, save_info='./', save_acc=8
         val_acc = correct / total
 
         if val_acc*100 > save_acc:
-            save_acc = val_acc*100
-            save_path = save_info / ('seed_'+str(seed)+'_acc_'+str(save_acc)[0:5]+
-                                     time.strftime("%Y-%m-%d %H-%M-%S", time.localtime())+'.pth')
+            _save_acc = val_acc*100
+            save_path = save_info / ('seed'+str(seed)+'_acc'+str(_save_acc)[0:5]+
+                                     '_epoch'+str(epoch)+
+                                     time.strftime("_%Y-%m-%d %H-%M-%S", time.localtime())+'.pth')
             print('save path', save_path)
             torch.save(net.state_dict(), save_path)
-        print("Test Loss=%.8f, Test acc=%.8f" % (test_loss / (num_val_steps), val_acc))
+
+        testing_loss = test_loss / (num_val_steps)
+        print("Test Loss=%.8f, Test acc=%.8f" % (testing_loss, val_acc))
+        # epoch; training loss, test loss, training acc, test acc
+        logging.info(str(epoch+1)+' '+str(training_loss)+' '+str(testing_loss)+' '+
+                      str(training_acc)+' '+str(val_acc))
+        
 
 def test(net, testloader):
     criterion = nn.CrossEntropyLoss()
