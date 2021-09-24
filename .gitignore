@@ -146,3 +146,6 @@ ckpt/
 
 #logging
 log/
+
+#mia model checkpoint
+mia/best_models
