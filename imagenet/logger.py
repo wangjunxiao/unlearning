@@ -1,15 +1,13 @@
 import csv
 import os.path
-
 import matplotlib
-
 matplotlib.use('Agg')
 
 from matplotlib import pyplot as plt
 import numpy as np
-
 plt.switch_backend('agg')
 
+#%%
 
 class CsvLogger:
     def __init__(self, filepath='./', filename='results.csv', data=None):

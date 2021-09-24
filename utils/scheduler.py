@@ -1,9 +1,3 @@
-import numpy as np
-import torch
-import torch.optim
-import torch.utils.data
-import torch.optim as optim
-
 class base_warmup():
     def __init__(self,optimizer,warm_step,warm_lr,dst_lr):
         ''' base class for warmup scheduler

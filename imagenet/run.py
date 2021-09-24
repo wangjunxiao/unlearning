@@ -10,9 +10,9 @@ import torch.utils.data
 matplotlib.use('Agg')
 
 from matplotlib import pyplot as plt
+from clr import CyclicLR
 
-from .clr import CyclicLR
-
+#%%
 
 def train(model, loader, epoch, optimizer, criterion, device, dtype, batch_size, log_interval, scheduler, warm_scheduler=None):
     model.train()
@@ -106,7 +106,6 @@ def save_checkpoint(state, is_best, filepath='./', filename='checkpoint.pth.tar'
 def find_bounds_clr(model, loader, optimizer, criterion, device, dtype, min_lr=8e-6, max_lr=8e-5, step_size=2000,
                     mode='triangular', save_path='.'):
     model.train()
-    correct1, correct5 = 0, 0
     scheduler = CyclicLR(optimizer, base_lr=min_lr, max_lr=max_lr, step_size=step_size, mode=mode)
     epoch_count = step_size // len(loader)  # Assuming step_size is multiple of batch per epoch
     accuracy = []

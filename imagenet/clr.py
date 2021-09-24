@@ -1,9 +1,7 @@
-# temporary file until https://github.com/pytorch/pytorch/pull/2016 is merged (hopefully 0.5)
-
-
 import numpy as np
 from torch.optim import Optimizer
 
+#%%
 
 class CyclicLR(object):
     """Sets the learning rate of each parameter group according to

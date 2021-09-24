@@ -1,10 +1,11 @@
 import os
-
 import torch
 import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 from torchvision import datasets, transforms
+
+#%%
 
 __imagenet_stats = {'mean': [0.485, 0.456, 0.406],
                     'std': [0.229, 0.224, 0.225]}

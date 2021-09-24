@@ -1,18 +1,14 @@
 import os
 import sys
-import csv
 import random
 import argparse
-
 from datetime import datetime
 
 import torch
 import torch.backends.cudnn as cudnn
 import torch.nn.parallel
 import torch.utils.data
-
 import torch.optim as optim
-from torch.optim.lr_scheduler import MultiStepLR
 from torchvision import models
 
 from nni.algorithms.compression.pytorch.pruning import L1FilterPruner
@@ -20,16 +16,15 @@ from nni.algorithms.compression.pytorch.pruning import L1FilterPruner
 from clr import CyclicLR
 from data import get_loaders
 from logger import CsvLogger
-from utils.counter_imagenet import count_flops_params
-from utils.train_util import load_model_pytorch, LabelSmoothCELoss
-from nets.resnet_imagenet import ResNet_ImageNet
-from nets.mobilenet_imagenet import MobileNetV2
-
 from run import train, test, save_checkpoint, find_bounds_clr
 
 # Warmup
 from utils.scheduler import linear_warmup_scheduler
+from utils.train_util import load_model_pytorch, LabelSmoothCELoss
+from nets.resnet_imagenet import ResNet_ImageNet
+from nets.mobilenet_imagenet import MobileNetV2
 
+#%%
 
 parser = argparse.ArgumentParser(description=' Models training with PyTorch ImageNet')
 parser.add_argument('--dataroot', required=True, metavar='PATH',
@@ -130,7 +125,6 @@ def main():
         return 
         
     model = model.cuda()
-    _, _, _ = count_flops_params(model, (1, 3, 224, 224))
     
     if args.make_mask:
         # masking
@@ -147,7 +141,6 @@ def main():
     
     if args.resume:
         load_model_pytorch(model, args.resume, args.model)
-        _, _, _ = count_flops_params(model, (1, 3, 224, 224))
 
     train_loader, val_loader = get_loaders(args.dataroot, args.batch_size, args.batch_size, args.input_size,
                                            args.workers)

@@ -5,8 +5,10 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-from .scheduler import linear_warmup_scheduler
+from utils.scheduler import linear_warmup_scheduler
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+#%%
 
 class LabelSmoothCELoss(nn.Module):
     def __init__(self, smoothing=0.1):

@@ -28,17 +28,17 @@ def test():
     
     mean=[125.31 / 255, 122.95 / 255, 113.87 / 255]
     std=[63.0 / 255, 62.09 / 255, 66.70 / 255]
-    transform_train = transforms.Compose([
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize(mean, std),
-            ])
+    #transform_train = transforms.Compose([
+    #        transforms.RandomCrop(32, padding=4),
+    #        transforms.RandomHorizontalFlip(),
+    #        transforms.ToTensor(),
+    #        transforms.Normalize(mean, std),
+    #        ])
     transform_test = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(mean,std)
             ])
-    trainset = torchvision.datasets.CIFAR10(root=dataroot, train=True, download=False, transform=transform_train)
+    #trainset = torchvision.datasets.CIFAR10(root=dataroot, train=True, download=False, transform=transform_train)
     testset = torchvision.datasets.CIFAR10(root=dataroot, train=False, download=False, transform=transform_test)
     
     print(len(testset))
