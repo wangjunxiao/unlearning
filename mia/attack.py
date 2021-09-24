@@ -70,8 +70,8 @@ out_classes = 2
 def get_cmd_arguments():
     parser = argparse.ArgumentParser(prog="Membership Inference Attack")
     parser.add_argument('--dataset', default='CIFAR10', type=str, choices=['CIFAR10', 'MNIST'], help='Which dataset to use (CIFAR10 or MNIST)')
-    parser.add_argument('--dataPath', default='../data', type=str, help='Path to store data')
-    parser.add_argument('--modelPath', default='./model',type=str, help='Path to save or load model checkpoints')
+    parser.add_argument('--dataPath', type=str, help='Path to store data')
+    parser.add_argument('--modelPath', type=str, help='Path to save or load model checkpoints')
     parser.add_argument('--trainTargetModel', action='store_true', help='Train a target model, if false then load an already trained model')
     parser.add_argument('--trainShadowModel', action='store_true', help='Train a shadow model, if false then load an already trained model')
     parser.add_argument('--need_augm',action='store_true', help='To use data augmentation on target and shadow training set or not')
@@ -125,7 +125,6 @@ def split_dataset(train_dataset):
     split3 = split1*3
     
     indices = list(range(total_size))
-    
     np.random.shuffle(indices)
     
     #Shadow model train and test set
@@ -136,7 +135,7 @@ def split_dataset(train_dataset):
     t_train_idx = indices[split2:split3]
     t_test_idx = indices[split3:]
     
-    return s_train_idx, s_test_idx,t_train_idx,t_test_idx
+    return s_train_idx, s_test_idx, t_train_idx, t_test_idx
     
 
 #--------------------------------------------------------------------------------
@@ -175,9 +174,8 @@ def get_data_loader(dataset,
         test_set = torchvision.datasets.CIFAR10(root=data_dir, 
                                                 train = False,  
                                                 transform = test_transforms)
-        
-        s_train_idx, s_out_idx, t_train_idx, t_out_idx = split_dataset(train_set)    
-    else:
+            
+    elif dataset == 'MNIST':
         #MNIST train set
         train_set = torchvision.datasets.MNIST(root=data_dir,
                                         train=True,
@@ -188,9 +186,8 @@ def get_data_loader(dataset,
                                         train = False,  
                                         transform = test_transforms)
         
-        s_train_idx, s_out_idx, t_train_idx, t_out_idx = split_dataset(train_set)
+    s_train_idx, s_out_idx, t_train_idx, t_out_idx = split_dataset(train_set)
    
-    
     # Data samplers
     s_train_sampler = SubsetRandomSampler(s_train_idx)
     s_out_sampler = SubsetRandomSampler(s_out_idx)
@@ -202,87 +199,45 @@ def get_data_loader(dataset,
     #From the held out set for target and shadow, we take n_validation samples. 
     #As train set is already small we decided to take valid samples from held out set
     #as these are samples not used in training. 
-    if dataset == 'CIFAR10':
-        target_val_idx = t_out_idx[:n_validation]
-        shadow_val_idx = s_out_idx[:n_validation]
+    target_val_idx = t_out_idx[:n_validation]
+    shadow_val_idx = s_out_idx[:n_validation]
     
-        t_val_sampler = SubsetRandomSampler(target_val_idx)
-        s_val_sampler = SubsetRandomSampler(shadow_val_idx)
-    else:
-        target_val_idx = t_out_idx[:n_validation]
-        shadow_val_idx = s_out_idx[:n_validation]
-
-        t_val_sampler = SubsetRandomSampler(target_val_idx)
-        s_val_sampler = SubsetRandomSampler(shadow_val_idx)
-    
+    t_val_sampler = SubsetRandomSampler(target_val_idx)
+    s_val_sampler = SubsetRandomSampler(shadow_val_idx)
 
     #-------------------------------------------------
     # Data loader
     #-------------------------------------------------
-    if dataset == 'CIFAR10':
 
-        t_train_loader = torch.utils.data.DataLoader(dataset=train_set, 
-                                            batch_size=batch, 
-                                            sampler = t_train_sampler,
-                                            num_workers=num_workers)
-                                            
-        t_out_loader = torch.utils.data.DataLoader(dataset=train_set,
-                                            batch_size=batch,
-                                            sampler = t_out_sampler,
-                                            num_workers=num_workers)
-                                            
-        t_val_loader = torch.utils.data.DataLoader(dataset=train_set,
-                                            batch_size=batch,
-                                            sampler=t_val_sampler,
-                                            num_workers=num_workers)
-        
-        s_train_loader = torch.utils.data.DataLoader(dataset=train_set,
-                                            batch_size=batch,
-                                            sampler=s_train_sampler,
-                                            num_workers=num_workers)
-                                            
-        s_out_loader = torch.utils.data.DataLoader(dataset=train_set,
-                                            batch_size=batch,
-                                            sampler=s_out_sampler,
-                                            num_workers=num_workers)
-        
-        s_val_loader = torch.utils.data.DataLoader(dataset=train_set,
-                                            batch_size=batch,
-                                            sampler=s_val_sampler,
-                                            num_workers=num_workers)
-
-    else:
-        t_train_loader = torch.utils.data.DataLoader(dataset=train_set, 
+    t_train_loader = torch.utils.data.DataLoader(dataset=train_set, 
                                             batch_size=batch, 
                                             sampler=t_train_sampler,
                                             num_workers=num_workers)
     
-        t_out_loader = torch.utils.data.DataLoader(dataset=train_set,
+    t_out_loader = torch.utils.data.DataLoader(dataset=train_set,
                                             batch_size=batch,
                                             sampler=t_out_sampler,
                                             num_workers=num_workers)
         
-        t_val_loader = torch.utils.data.DataLoader(dataset=train_set,
+    t_val_loader = torch.utils.data.DataLoader(dataset=train_set,
                                             batch_size=batch,
                                             sampler=t_val_sampler,
                                             num_workers=num_workers)
         
-        s_train_loader = torch.utils.data.DataLoader(dataset=train_set,
+    s_train_loader = torch.utils.data.DataLoader(dataset=train_set,
                                             batch_size=batch,
                                             sampler=s_train_sampler,
                                             num_workers=num_workers)
                                             
-        s_out_loader = torch.utils.data.DataLoader(dataset=train_set,
+    s_out_loader = torch.utils.data.DataLoader(dataset=train_set,
                                             batch_size=batch,
                                             sampler=s_out_sampler,
                                             num_workers=num_workers)
         
-        s_val_loader = torch.utils.data.DataLoader(dataset=train_set,
+    s_val_loader = torch.utils.data.DataLoader(dataset=train_set,
                                             batch_size=batch,
                                             sampler=s_val_sampler,
                                             num_workers=num_workers)
-    
-
       
     print('Total Test samples in {} dataset : {}'.format(dataset, len(test_set))) 
     print('Total Train samples in {} dataset : {}'.format(dataset, len(train_set)))  
@@ -293,7 +248,6 @@ def get_data_loader(dataset,
     print('Number of Shadow valid samples: {}'.format(len(s_val_sampler)))
     print('Number of Shadow test samples: {}'.format(len(s_out_sampler)))
    
-
     return t_train_loader, t_val_loader, t_out_loader, s_train_loader, s_val_loader, s_out_loader
 
 
@@ -312,10 +266,8 @@ def attack_inference(model,
     X = torch.cat(test_X)
     Y = torch.cat(test_Y)
     
-
     #Create Inference dataset
     inferdataset = TensorDataset(X,Y) 
-
     dataloader = torch.utils.data.DataLoader(dataset=inferdataset,
                                             batch_size=50,
                                             shuffle=False,
@@ -350,11 +302,12 @@ def attack_inference(model,
     pred_y = torch.cat(pred_y).numpy()
 
     print('---Detailed Results----')
-    print(classification_report(true_y,pred_y, target_names=targetnames))
+    print(classification_report(true_y, pred_y, target_names=targetnames))
 
 
 #Main Method to initate model training and attack
-def create_attack(dataset, dataPath, modelPath, trainTargetModel, trainShadowModel, need_augm, need_topk, param_init, verbose):
+def create_attack(dataset, dataPath, modelPath, trainTargetModel, trainShadowModel, 
+                  need_augm, need_topk, param_init, verbose):
  
     dataset = dataset
     need_augm = need_augm
@@ -399,7 +352,6 @@ def create_attack(dataset, dataPath, modelPath, trainTargetModel, trainShadowMod
                                                                 need_augm,
                                                                 num_workers)
     
-     
     if (trainTargetModel):
 
         if dataset == 'CIFAR10':            
@@ -559,9 +511,12 @@ def create_attack(dataset, dataPath, modelPath, trainTargetModel, trainShadowMod
     #Inference on trained attack model
     attack_inference(attack_model, targetX, targetY, device)
 
-# if __name__ == '__main__':
-#     #get command line arguments from the user
-#     args = get_cmd_arguments()
-#     print(args)
-#     #Generate Membership inference attack1
-#     create_attack(args)
+
+if __name__ == '__main__':
+    #get command line arguments from the user
+    args = get_cmd_arguments()
+    args.dataPath = ('../log/').replace('\\','/')
+    print(args)
+    #Generate Membership inference attack1
+    create_attack(args)
+    
