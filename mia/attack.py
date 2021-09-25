@@ -8,14 +8,16 @@ import torchvision.transforms as transforms
 from torch.utils.data.dataset import TensorDataset
 from sklearn.metrics import classification_report
 
+import model
+from model import init_params as w_init
+from train import  train_attack_model, prepare_attack_data
+
+import sys 
+sys.path.append("..") 
 from utils.dataloader_util import generate
 from utils.train_util import load_model_pytorch
 from nets.resnet_cifar import ResNet_CIFAR
 from nets.vgg import VGG_CIFAR
-
-import model
-from model import init_params as w_init
-from train import  train_attack_model, prepare_attack_data
 
 #%%
 
@@ -29,7 +31,7 @@ need_earlystop = False
 ################################
 #Number of processes
 num_workers = 2
-NUM_EPOCHS = 50
+NUM_EPOCHS = 5
 BATCH_SIZE = 10
 #Learning rate
 LR_ATTACK = 0.001 
@@ -140,8 +142,8 @@ def create_attack(args):
             transforms.Normalize(mean,std)
             ])
         total_classes = 10 # [0-9]
-        trainset = torchvision.datasets.CIFAR10(root=args.dataroot, train=True, download=False, transform=transform_train)
-        testset = torchvision.datasets.CIFAR10(root=args.dataroot, train=False, download=False, transform=transform_test)
+        trainset = torchvision.datasets.CIFAR10(root=args.dataPath, train=True, download=False, transform=transform_train)
+        testset = torchvision.datasets.CIFAR10(root=args.dataPath, train=False, download=False, transform=transform_test)
 
         if args.model == 'resnet56':
             target_model = ResNet_CIFAR(depth=56, num_classes=10)
@@ -163,12 +165,12 @@ def create_attack(args):
     unlearn_traindata = generate(trainset, unlearn_listclass)
     unlearn_testdata = generate(testset, unlearn_listclass)
     
-    print('Total Train samples in {} dataset : {}'.format(args.dataset, len(trainset))) 
-    print('Total Test samples in {} dataset : {}'.format(args.dataset, len(testset))) 
+    print('Total Train samples in {} dataset: {}'.format(args.dataset, len(trainset))) 
+    print('Total Test samples in {} dataset: {}'.format(args.dataset, len(testset))) 
     print('Number of unlearn train samples: {}'.format(len(unlearn_traindata)))
     print('Number of unlearn test samples: {}'.format(len(unlearn_testdata)))
     print('Number of rest train samples: {}'.format(len(rest_traindata)))
-    print('Number of rest valid samples: {}'.format(len(rest_testdata)))
+    print('Number of rest test samples: {}'.format(len(rest_testdata)))
     
     rest_trainloader = torch.utils.data.DataLoader(rest_traindata, batch_size=args.batch_size, 
                                                    shuffle=False, num_workers=4)

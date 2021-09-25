@@ -148,4 +148,4 @@ ckpt/
 log/
 
 #mia model checkpoint
-mia/best_models
+mia/model_ckpt
