@@ -1,9 +1,9 @@
-import torch
-from torch.utils.data.dataset import TensorDataset
-import torch.nn.functional as F
 import copy
-import os
+import torch
+import torch.nn.functional as F
+from torch.utils.data.dataset import TensorDataset
 
+#%%
 
 #Prepare data for Attack Model
 def prepare_attack_data(model,
@@ -37,7 +37,7 @@ def prepare_attack_data(model,
             # but to handle the scenario when trained model is given to us, we added this boolean
             # to different if the dataset passed is training or test and assign labels accordingly    
             if test_dataset:
-                attackY.append(torch.zeros(posteriors.size(0),dtype=torch.long))
+                attackY.append(torch.zeros(posteriors.size(0), dtype=torch.long))
             else:
                 attackY.append(torch.ones(posteriors.size(0), dtype=torch.long))
         
@@ -126,6 +126,7 @@ def val_per_epoch(model,
     
     return epoch_loss, epoch_acc
 
+
 ###############################
 # Training Attack Model
 ###############################
@@ -135,7 +136,7 @@ def train_attack_model(model,
                     optimizer,
                     lr_scheduler,
                     device,
-                    model_path='./model',
+                    model_path,
                     epochs=10,
                     b_size=20,
                     num_workers=1,
@@ -146,8 +147,6 @@ def train_attack_model(model,
     best_valacc = 0
     stop_count = 0
     patience = 5 # Early stopping
-
-    path = os.path.join(model_path,'best_attack_model.ckpt')
         
     train_loss_hist = []
     valid_loss_hist = []
@@ -206,7 +205,7 @@ def train_attack_model(model,
                 best_valacc = valid_acc
                 #Store best model weights
                 best_model = copy.deepcopy(model.state_dict())
-                torch.save(best_model, path)
+                torch.save(best_model, model_path)
                 stop_count = 0
             else:
                 stop_count+=1
@@ -218,140 +217,7 @@ def train_attack_model(model,
             best_valacc = valid_acc
             #Store best model weights
             best_model = copy.deepcopy(model.state_dict())
-            torch.save(best_model, path)
+            torch.save(best_model, model_path)
             
     return best_valacc
-    
-
-
-###################################
-# Training Target and Shadow Model
-###################################            
-def train_model(model,
-                train_loader,
-                val_loader,
-                test_loader,
-                loss,
-                optimizer,
-                scheduler,
-                device,
-                model_path,
-                verbose=False,
-                num_epochs=50,
-                top_k=False,
-                earlystopping=False,
-                is_target=False):
-    
-    best_valacc = 0
-    patience = 5 # Early stopping
-    stop_count= 0
-    train_loss_hist = []
-    valid_loss_hist = []
-    val_acc_hist = []
-    
-    if is_target:
-        print('----Target model training----')
-    else:
-        print('---Shadow model training----')
-    
-    #Path for saving best target and shadow models
-    target_path = os.path.join(model_path,'best_target_model.ckpt')
-    shadow_path = os.path.join(model_path,'best_shadow_model.ckpt')
-    
-    for epoch in range(num_epochs):
-        
-        train_loss, train_acc = train_per_epoch(model, train_loader, loss, optimizer, device)
-        valid_loss, valid_acc = val_per_epoch(model, val_loader, loss, device)
-
-        valid_loss_hist.append(valid_loss)
-        train_loss_hist.append(train_loss)
-        val_acc_hist.append(valid_acc)
-
-        scheduler.step()
-
-        print ('Epoch [{}/{}], Train Loss: {:.3f} | Train Acc: {:.2f}% | Val Loss: {:.3f} | Val Acc: {:.2f}%'
-                   .format(epoch+1, num_epochs, train_loss, train_acc*100, valid_loss, valid_acc*100))
-        
-        if earlystopping:
-            if best_valacc<=valid_acc:
-                print('Saving model checkpoint')
-                best_valacc = valid_acc
-                #Store best model weights
-                best_model = copy.deepcopy(model.state_dict())
-                if is_target:
-                    torch.save(best_model, target_path)
-                else:
-                    torch.save(best_model, shadow_path)
-                stop_count = 0
-            else:
-                stop_count+=1
-                if stop_count >=patience: #early stopping check
-                    print('End Training after [{}] Epochs'.format(epoch+1))
-                    break
-        else:#Continue model training for all epochs
-            print('Saving model checkpoint')
-            best_valacc = valid_acc
-            #Store best model weights
-            best_model = copy.deepcopy(model.state_dict())
-            if is_target:
-                torch.save(best_model, target_path)
-            else:
-                torch.save(best_model, shadow_path)
-    
-    
-    if is_target:
-        print('----Target model training finished----')
-        print('Validation Accuracy for the Target Model is: {:.2f} %'.format(100* best_valacc))
-    else:
-        print('----Shadow model training finished-----')
-        print('Validation Accuracy for the Shadow Model is: {:.2f} %'.format(100* best_valacc))
-
-    if is_target:
-        print('----LOADING the best Target model for Test----')
-        model.load_state_dict(torch.load(target_path))
-    else:
-        print('----LOADING the best Shadow model for Test----')
-        model.load_state_dict(torch.load(shadow_path))
-    
-    #As the model is fully trained, time to prepare data for attack model.
-    #Training Data for members would come from shadow train dataset, and member inference from target train dataset respectively.
-    attack_X, attack_Y = prepare_attack_data(model,train_loader,device,top_k)
-    
-    # In test phase, we don't need to compute gradients (for memory efficiency)
-    print('----Test the Trained Network----')
-    model.eval() 
-    with torch.no_grad():
-        correct = 0
-        total = 0
-        for inputs, labels in test_loader:
-            inputs = inputs.to(device)
-            labels = labels.to(device)
             
-            test_outputs = model(inputs)
-            
-            #Predictions for accuracy calculations
-            _, predicted = torch.max(test_outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-            
-            # Posterior and labels for non-members
-            probs_test = F.softmax(test_outputs, dim=1)
-            if top_k:
-                #Take top K posteriors ranked high ---> low
-                topk_t_probs, _ = torch.topk(probs_test, 3, dim=1)
-                attack_X.append(topk_t_probs.cpu())
-            else:
-                attack_X.append(probs_test.cpu())
-            attack_Y.append(torch.zeros(probs_test.size(0), dtype=torch.long))
-
-        if is_target:
-            print('Test Accuracy of the Target model: {:.2f}%'.format(100 * correct / total))
-        else:
-            print('Test Accuracy of the Shadow model: {:.2f}%'.format(100 * correct / total)) 
-            
-
-    return attack_X, attack_Y
-
-    
-
-        
