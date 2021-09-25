@@ -10,7 +10,7 @@ def prepare_attack_data(model,
                         iterator,
                         device,
                         top_k=False,
-                        test_dataset=False):
+                        unused_dataset=False):
     
     attackX = []
     attackY = []
@@ -33,10 +33,10 @@ def prepare_attack_data(model,
             else:
                 attackX.append(posteriors.cpu())
 
-            #This function was initially designed to calculate posterior for training loader,
+            #This function was initially designed to calculate posterior for data loader,
             # but to handle the scenario when trained model is given to us, we added this boolean
-            # to different if the dataset passed is training or test and assign labels accordingly    
-            if test_dataset:
+            # to different if the dataset passed is training or unused and assign labels accordingly    
+            if unused_dataset:
                 attackY.append(torch.zeros(posteriors.size(0), dtype=torch.long))
             else:
                 attackY.append(torch.ones(posteriors.size(0), dtype=torch.long))

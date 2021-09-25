@@ -31,7 +31,7 @@ need_earlystop = False
 ################################
 #Number of processes
 num_workers = 2
-NUM_EPOCHS = 5
+NUM_EPOCHS = 2
 BATCH_SIZE = 10
 #Learning rate
 LR_ATTACK = 0.001 
@@ -114,8 +114,8 @@ def attack_inference(model,
     true_y =  torch.cat(true_y).numpy()
     pred_y = torch.cat(pred_y).numpy()
 
-    print('---Detailed Results----')
-    print(classification_report(true_y, pred_y, target_names=targetnames))
+    #print('---Detailed Results----')
+    #print(classification_report(true_y, pred_y, target_names=targetnames))
 
 
 #Main Method to initate model and attack
@@ -183,13 +183,13 @@ def create_attack(args):
     
     print('---Preparing Attack Training data---')
     rest_trainX, rest_trainY = prepare_attack_data(target_model, rest_trainloader, device, args.need_topk)
-    rest_testX, rest_testY = prepare_attack_data(target_model, rest_testloader, device, args.need_topk, test_dataset=True)
+    rest_testX, rest_testY = prepare_attack_data(target_model, rest_testloader, device, args.need_topk, unused_dataset=True)
     attack_trainX = rest_trainX + rest_testX
     attack_trainY = rest_trainY + rest_testY
     
     print('---Preparing Attack Testing data---')
-    unlearn_trainX, unlearn_trainY = prepare_attack_data(target_model, unlearn_trainloader, device, args.need_topk)
-    unlearn_testX, unlearn_testY = prepare_attack_data(target_model, unlearn_testloader, device, args.need_topk, test_dataset=True)
+    unlearn_trainX, unlearn_trainY = prepare_attack_data(target_model, unlearn_trainloader, device, args.need_topk, unused_dataset=True)
+    unlearn_testX, unlearn_testY = prepare_attack_data(target_model, unlearn_testloader, device, args.need_topk, unused_dataset=True)
     attack_testX = unlearn_trainX + unlearn_testX
     attack_testY = unlearn_trainY + unlearn_testY
     
@@ -222,7 +222,7 @@ def create_attack(args):
     print('Validation Accuracy for the Best Attack Model is: {:.2f} %'.format(100* attack_valacc))
    
     #Load the trained attack model
-    attack_model.load_state_dict(args.ckptPath)
+    attack_model.load_state_dict(torch.load(args.ckptPath))
     
     #Inference on trained attack model
     attack_inference(attack_model, attack_testX, attack_testY, device)
@@ -233,7 +233,8 @@ if __name__ == '__main__':
     project_dir = Path(__file__).resolve().parent.parent
     args.dataPath = project_dir / 'data'
     args.model = 'resnet20'
-    args.modelPath = project_dir / 'ckpt' / 'retrained' / args.model / 'seed0_acc87.78_epoch99_2021-09-22 21-20-02.pth'
+    #args.modelPath = project_dir / 'ckpt' / args.model / 'seed_0_acc_84.15.pth'
+    args.modelPath = project_dir / 'ckpt' / 'retrained'/ args.model / 'seed0_acc87.78_epoch99_2021-09-22 21-20-02.pth'
     args.ckptPath = project_dir / 'mia' / 'model_ckpt' / 'best_attack_model.ckpt'
     args.seed = 1234
     args.unlearn_class = 9
