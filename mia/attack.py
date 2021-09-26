@@ -102,8 +102,8 @@ def attack_inference(model,
             total+=labels.size(0)
             correct+=(predictions == labels).sum().item()
             
-            # print('True Labels for Batch [{}] are : {}'.format(i,labels))
-            # print('Predictions for Batch [{}] are : {}'.format(i,predictions))
+            #print('True Labels for Batch [{}] are : {}'.format(i,labels))
+            #print('Predictions for Batch [{}] are : {}'.format(i,predictions))
             
             true_y.append(labels.cpu())
             pred_y.append(predictions.cpu())
@@ -234,7 +234,7 @@ if __name__ == '__main__':
     args.dataPath = project_dir / 'data'
     args.model = 'resnet20'
     #args.modelPath = project_dir / 'ckpt' / args.model / 'seed_0_acc_84.15.pth'
-    args.modelPath = project_dir / 'ckpt' / 'retrained'/ args.model / 'seed0_acc87.78_epoch99_2021-09-22 21-20-02.pth'
+    args.modelPath = project_dir / 'ckpt' / 'finetuned'/ args.model / 'seed0_acc86.68_epoch9_2021-09-23 18-47-59.pth'
     args.ckptPath = project_dir / 'mia' / 'model_ckpt' / 'best_attack_model.ckpt'
     args.seed = 1234
     args.unlearn_class = 9
