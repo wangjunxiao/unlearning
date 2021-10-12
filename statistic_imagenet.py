@@ -90,7 +90,6 @@ model = create_model(args.model, args.pretrained_dir)
 
 flops, param, detail_flops = count_flops_params(model, (1,3,224,224))
 
-# 可以函数化
 print('fiit calculation start:')
 feature_iit = acculumate_feature(model, search_loader, args.stop_batch)
 

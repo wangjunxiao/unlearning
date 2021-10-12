@@ -14,14 +14,14 @@ logging.basicConfig(
     level=logging.INFO,
     datefmt='%H%M%S')
 
-a = np.array([[5., 5., 5.], [5., 5., 5.]])
+a = np.array([[5., 8., 5.], [5., 5., 5.]])
 b = np.array([5, 5, 5])
 aa = torch.from_numpy(a)
 bb = torch.from_numpy(b)
 
-aa[1] = aa[1]/2
+aa = (aa >= 6).sum(dim=1)
 
-print (aa)
+print ('aa', aa)
 
 print(torch.zeros(2, 3))
 

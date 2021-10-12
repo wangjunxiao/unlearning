@@ -149,3 +149,7 @@ log/
 
 #mia model checkpoint
 mia/model_ckpt
+
+#vgg visual
+visual/results
+visual/images

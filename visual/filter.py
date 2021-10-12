@@ -52,49 +52,49 @@ class FeatureVisualization():
 
     def get_feature(self):
         # input = Variable(torch.randn(1, 3, 224, 224))
-        input=self.process_image()
+        input = self.process_image()
         print(input.shape)
         x=input
         for index,layer in enumerate(self.pretrained_model):
-            x=layer(x)
+            x = layer(x)
             if (index == self.selected_layer):
                 return x
 
-    def get_single_feature(self):
-        features=self.get_feature()
+    def get_feature_list(self):
+        feature_list = []
+        features = self.get_feature()
         print(features.shape)
 
-        feature=features[:,0,:,:]
-        print(feature.shape)
+        for i in range(features.shape[1]):    
+            feature=features[:, i, :, :]
+            #print(feature.shape)
 
-        feature=feature.view(feature.shape[1],feature.shape[2])
-        print(feature.shape)
-
-        return feature
+            feature = feature.view(feature.shape[1], feature.shape[2])
+            #print(feature.shape)
+            feature_list.append(feature)
+            
+        return feature_list
 
     def save_feature_to_img(self):
         #to numpy
-        feature=self.get_single_feature()
-        feature=feature.data.numpy()
+        feature_list = self.get_feature_list()
+        channel_idx = 0
+        for feature in feature_list:
+            feature = feature.data.numpy()
 
-        #use sigmod to [0,1]
-        feature= 1.0/(1+np.exp(-1*feature))
+            #use sigmod to [0,1]
+            feature= 1.0/(1+np.exp(-1*feature))
 
-        # to [0,255]
-        feature=np.round(feature*255)
-        print(feature[0])
+            # to [0,255]
+            feature=np.round(feature*255)
+            #print(feature[0])
 
-        cv2.imwrite('./img.jpg',feature)
-
+            cv2.imwrite('./results/layer'+str(self.selected_layer)+'channel'+str(channel_idx)+'.jpg', feature)
+            channel_idx += 1
 
 if __name__=='__main__':
     # get class
-    myClass = FeatureVisualization('./images/panda.JPEG', 26)
-    
-    #print(len(myClass.pretrained_model))
-    #print(myClass.pretrained_model)
-    #for n in myClass.pretrained_model.named_modules():
-    #    print (n)
-    
+    myClass = FeatureVisualization('./images/Airliner.JPEG', 28)    
     myClass.save_feature_to_img()
-    
+    #51 head
+    #124 word

@@ -18,8 +18,7 @@ class VGG_CIFAR(MyNetwork):
     def __init__(self, cfg=None, cutout=True, num_classes=10):
         super(VGG_CIFAR, self).__init__()
         if cfg is None:
-            cfg = [64, 64, 128, 128, 256, 256,
-                   256, 512, 512, 512, 512, 512, 512]
+            cfg = cifar_cfg
         self.cutout = cutout
         self.cfg = cfg
         _cfg = list(cfg)
