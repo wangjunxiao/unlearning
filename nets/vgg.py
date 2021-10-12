@@ -18,14 +18,10 @@ class VGG_CIFAR(MyNetwork):
     def __init__(self, cfg=None, cutout=True, num_classes=10):
         super(VGG_CIFAR, self).__init__()
         if cfg is None:
-            cfg = cifar_cfg
+            cfg = cifar_cfg[16]
         self.cutout = cutout
         self.cfg = cfg
         _cfg = list(cfg)
-        _cfg.insert(2, 'M')
-        _cfg.insert(5, 'M')
-        _cfg.insert(9, 'M')
-        _cfg.insert(13, 'M')
         self._cfg = _cfg
         self.feature = self.make_layers(_cfg, True)
         self.avgpool = nn.AvgPool2d(2)
@@ -63,50 +59,6 @@ class VGG_CIFAR(MyNetwork):
                 in_channels = v
         self.conv_num = conv_index
         return nn.Sequential(OrderedDict(layers))
-
-    def cfg2param(self, cfg):
-        total_param = self.classifier_param
-        c_in = 3
-        _cfg = list(cfg)
-        _cfg.insert(2, 'M')
-        _cfg.insert(5, 'M')
-        _cfg.insert(9, 'M')
-        _cfg.insert(13, 'M')
-        for c_out in _cfg:
-            if isinstance(c_out, int):
-                total_param += 3 * 3 * c_in * c_out + 2 * c_out
-                c_in = c_out
-        total_param += 512 * (_cfg[-1] + 1)
-        return total_param
-
-    def cfg2flops(self, cfg):  # to simplify, only count convolution flops
-        _cfg = list(cfg)
-        _cfg.insert(2, 'M')
-        _cfg.insert(5, 'M')
-        _cfg.insert(9, 'M')
-        _cfg.insert(13, 'M')
-        input_size = 32
-        num_classes = 10
-        total_flops = 0
-        c_in = 3
-        for c_out in _cfg:
-            if isinstance(c_out, int):
-                total_flops += 3 * 3 * c_in * c_out * input_size * input_size  # conv
-                total_flops += 4 * c_out * input_size * input_size  # bn
-                total_flops += input_size * input_size * c_out  # relu
-                c_in = c_out
-            else:
-                input_size /= 2
-                total_flops += 2 * input_size * input_size * c_in  # max pool
-        input_size /= 2
-        total_flops += 3 * input_size * input_size * _cfg[-1]  # avg pool
-        total_flops += (2 * input_size * input_size *
-                        _cfg[-1] - 1) * input_size * input_size * 512  # fc
-        total_flops += 4 * _cfg[-1] * input_size * input_size  # bn_1d
-        total_flops += input_size * input_size * 512  # relu
-        total_flops += (2 * input_size * input_size * 512 - 1) * \
-            input_size * input_size * num_classes  # fc
-        return total_flops
 
     def forward(self, x):
         if self.training and self.cutout:
