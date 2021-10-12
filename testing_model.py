@@ -55,7 +55,7 @@ def Testing():
     print(args)
 
     setup_seed(args.seed)
-    model_path = project_dir / 'ckpt' / 'retrained' / args.model / 'seed_0_acc_77.762021-09-22 13-52-41.pth' 
+    model_path = project_dir / 'ckpt' / 'retrained' / args.model / 'seed0_acc86.36_epoch79_2021-09-22 21-00-54.pth' 
     
     if args.dataset == 'cifar10':
         '''load data and model'''
