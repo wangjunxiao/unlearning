@@ -15,10 +15,12 @@ cifar_cfg = {
 
 
 class VGG_CIFAR(MyNetwork):
-    def __init__(self, cfg=None, cutout=True, num_classes=10):
+    def __init__(self, cfg_index=None, cutout=True, num_classes=10):
         super(VGG_CIFAR, self).__init__()
-        if cfg is None:
+        if cfg_index is None:
             cfg = cifar_cfg[16]
+        else:
+            cfg = cifar_cfg[cfg_index]
         self.cutout = cutout
         self.cfg = cfg
         _cfg = list(cfg)
@@ -83,7 +85,7 @@ class VGG_CIFAR(MyNetwork):
         return {
             'name': self.__class__.__name__,
             'cfg': self.cfg,
-            'cfg_base': [64, 64, 128, 128, 256, 256, 256, 512, 512, 512, 512, 512, 512],
+            'cfg_base': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512],
             'dataset': 'cifar10',
         }
 
