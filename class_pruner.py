@@ -58,6 +58,8 @@ def calculate_cp(features:dict, classes:list, dataset:str, coe:int, unlearn_clas
     tf_idf_map = {}
     if dataset == 'cifar10':
         class_num = 10
+    if dataset == 'cifar100':
+        class_num = 100
     list_classes_address = []
     for z in range(class_num):
         address_index = [x for x in range(len(classes)) if classes[x] == z]

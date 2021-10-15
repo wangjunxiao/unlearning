@@ -48,14 +48,14 @@ def Testing():
     args.dataset = 'cifar10'
     project_dir = Path(__file__).resolve().parent
     args.dataroot = project_dir / 'data'
-    args.model = 'resnet20'
+    args.model = 'resnet32'
     args.gpus = 0
     args.unlearn_class = 9
     args.j = 4
     print(args)
 
     setup_seed(args.seed)
-    model_path = project_dir / 'ckpt' / 'retrained' / args.model / 'seed0_acc86.36_epoch79_2021-09-22 21-00-54.pth' 
+    model_path = project_dir / 'ckpt' / args.model / 'seed0_acc84.76_epoch12_2021-10-12 10-34-34.pth' 
     
     if args.dataset == 'cifar10':
         '''load data and model'''
@@ -72,6 +72,8 @@ def Testing():
             net = ResNet_CIFAR(depth=56, num_classes=10)
         elif args.model == 'resnet20':
             net = ResNet_CIFAR(depth=20, num_classes=10)
+        elif args.model == 'resnet32':
+            net = ResNet_CIFAR(depth=32, num_classes=10)
         elif args.model == 'vgg':
             net = VGG_CIFAR(num_classes=10)
         else:

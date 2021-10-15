@@ -88,12 +88,12 @@ def Class_Pruning():
     args.dataset = 'cifar10'
     project_dir = Path(__file__).resolve().parent
     args.dataroot = project_dir / 'data'
-    args.model = 'resnet20'
+    args.model = 'resnet56'
     args.gpus = 0
     args.j = 4
-    args.stop_batch = 200
+    args.stop_batch = 1
     args.unlearn_class = 9
-    args.sparsity = 0.05   #cifar10 args.sparsity = 0.05
+    args.sparsity = 0.04   #cifar10 args.sparsity = 0.05
     args.coe = 0
     args.epochs = 10
     args.lr = 0.1
@@ -101,7 +101,7 @@ def Class_Pruning():
     args.label_smoothing = 0.0 
     args.warmup_step = 0
     args.warm_lr = 10e-5
-    args.model_file = 'seed_0_acc_84.15.pth'
+    args.model_file = 'seed0_acc84.93_epoch17_2021-10-11 21-11-53.pth'
     print(args)
     
     setup_seed(args.seed)

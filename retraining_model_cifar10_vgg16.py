@@ -76,7 +76,7 @@ def Retraining():
     args.dataset = 'cifar10'
     project_dir = Path(__file__).resolve().parent
     args.dataroot = project_dir / 'data'
-    args.model = 'resnet20'
+    args.model = 'vgg16'
     args.pretrained = 0
     args.unlearn_class = 9
     args.gpus = 0
@@ -114,13 +114,13 @@ def Retraining():
             net = ResNet_CIFAR(depth=56, num_classes=10)
         elif args.model == 'resnet20':
             net = ResNet_CIFAR(depth=20, num_classes=10)
-        elif args.model == 'vgg':
-            net = VGG_CIFAR(num_classes=10)
+        elif args.model == 'vgg16':
+            net = VGG_CIFAR(cfg_index=16, num_classes=10)
         else:
             print('no model')
         net = net.cuda()
         if args.pretrained == 1:
-            model_path = project_dir / 'ckpt' / 'retrained' / args.model / 'seed_0_acc_49.65.pth'
+            model_path = project_dir / 'ckpt' / 'retrained' / args.model / 'seed0_acc85.25_epoch54_2021-10-13 18-09-46.pth'
             load_model_pytorch(net, model_path, args.model)
 
     list_allclasses = list(range(total_classes))

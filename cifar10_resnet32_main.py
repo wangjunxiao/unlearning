@@ -73,6 +73,8 @@ def load_model_CIFAR10(args, model_path):
         net = ResNet_CIFAR(depth=56, num_classes=10)
     elif args.model == 'resnet20':
         net = ResNet_CIFAR(depth=20, num_classes=10)
+    elif args.model == 'resnet32':
+        net = ResNet_CIFAR(depth=32, num_classes=10)
     elif args.model == 'vgg':
         net = VGG_CIFAR(num_classes=10)
     else:
@@ -88,7 +90,7 @@ def Class_Pruning():
     args.dataset = 'cifar10'
     project_dir = Path(__file__).resolve().parent
     args.dataroot = project_dir / 'data'
-    args.model = 'resnet20'
+    args.model = 'resnet32'
     args.gpus = 0
     args.j = 4
     args.stop_batch = 1
@@ -101,7 +103,7 @@ def Class_Pruning():
     args.label_smoothing = 0.0 
     args.warmup_step = 0
     args.warm_lr = 10e-5
-    args.model_file = 'seed0_acc84.15_epoch9_2021-10-11 20-33-22.pth'
+    args.model_file = 'seed0_acc84.76_epoch12_2021-10-12 10-34-34.pth'
     print(args)
     
     setup_seed(args.seed)

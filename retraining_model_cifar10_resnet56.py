@@ -76,7 +76,7 @@ def Retraining():
     args.dataset = 'cifar10'
     project_dir = Path(__file__).resolve().parent
     args.dataroot = project_dir / 'data'
-    args.model = 'resnet20'
+    args.model = 'resnet56'
     args.pretrained = 0
     args.unlearn_class = 9
     args.gpus = 0
