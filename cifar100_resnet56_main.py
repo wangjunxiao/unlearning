@@ -87,8 +87,12 @@ def load_model_CIFAR100(args, model_path):
         net = ResNet_CIFAR(depth=56, num_classes=100)
     elif args.model == 'resnet20':
         net = ResNet_CIFAR(depth=20, num_classes=100)
-    elif args.model == 'vgg16':
-        net = VGG_CIFAR(cfg_index=16, num_classes=100)
+    elif args.model == 'resnet32':
+        net = ResNet_CIFAR(depth=32, num_classes=100)
+    elif args.model == 'resnet44':
+        net = ResNet_CIFAR(depth=44, num_classes=100)
+    elif args.model == 'vgg':
+        net = VGG_CIFAR(num_classes=100)
     else:
         print('no model')
         return
@@ -102,12 +106,12 @@ def Class_Pruning():
     args.dataset = 'cifar100'
     project_dir = Path(__file__).resolve().parent
     args.dataroot = project_dir / 'data'
-    args.model = 'vgg16'
+    args.model = 'resnet56'
     args.gpus = 0
     args.j = 4
     args.stop_batch = 20
     args.unlearn_class = 99
-    args.sparsity = 0.15  #cifar10 args.sparsity = 0.05
+    args.sparsity = 0.1   #cifar10 args.sparsity = 0.05
     args.coe = 0
     args.epochs = 10
     args.lr = 0.1
@@ -115,7 +119,7 @@ def Class_Pruning():
     args.label_smoothing = 0.0 
     args.warmup_step = 0
     args.warm_lr = 10e-5
-    args.model_file = 'seed0_acc50.28_epoch18_2021-10-14 16-18-36.pth'
+    args.model_file = 'seed0_acc52.82_epoch22_2021-10-18 13-18-18.pth'
     print(args)
     
     setup_seed(args.seed)

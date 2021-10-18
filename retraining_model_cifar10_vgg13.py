@@ -73,14 +73,14 @@ def setup_seed(seed):
 def Retraining():
     '''configuration'''
     args = parser.parse_args()
-    args.dataset = 'cifar100'
+    args.dataset = 'cifar10'
     project_dir = Path(__file__).resolve().parent
     args.dataroot = project_dir / 'data'
-    args.model = 'vgg19'
+    args.model = 'vgg13'
     args.pretrained = 0
-    args.unlearn_class = 99
+    args.unlearn_class = 9
     args.gpus = 0
-    args.j = 8
+    args.j = 4
     args.epochs = 100
     args.lr = 0.1
     args.save_acc = 0.0
@@ -90,7 +90,7 @@ def Retraining():
     print(args)
     
     setup_seed(args.seed)
-    save_info = project_dir / 'ckpt' / 'retrained' / args.model / 'cifar100' 
+    save_info = project_dir / 'ckpt' / 'retrained' / args.model  
     
     if args.dataset == 'cifar10':
         '''load data and model'''
@@ -114,44 +114,16 @@ def Retraining():
             net = ResNet_CIFAR(depth=56, num_classes=10)
         elif args.model == 'resnet20':
             net = ResNet_CIFAR(depth=20, num_classes=10)
-        elif args.model == 'vgg':
-            net = VGG_CIFAR(num_classes=10)
+        elif args.model == 'vgg16':
+            net = VGG_CIFAR(cfg_index=16, num_classes=10)
+        elif args.model == 'vgg13':
+            net = VGG_CIFAR(cfg_index=13, num_classes=10)
         else:
             print('no model')
-    
-    if args.dataset == 'cifar100':
-        '''load data and model'''
-        mean=[129.3 / 255, 124.1 / 255, 112.4 / 255]
-        std=[68.2 / 255, 65.4 / 255, 70.4 / 255]
-        transform_train = transforms.Compose([
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize(mean, std),
-            ])
-        transform_test = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(mean,std)
-            ])
-        total_classes = 100 # [0-99]
-        trainset = torchvision.datasets.CIFAR100(root=args.dataroot, train=True, download=False, transform=transform_train)
-        testset = torchvision.datasets.CIFAR100(root=args.dataroot, train=False, download=False, transform=transform_test)
-        
-        if args.model == 'resnet56':
-            net = ResNet_CIFAR(depth=56, num_classes=100)
-        elif args.model == 'resnet20':
-            net = ResNet_CIFAR(depth=20, num_classes=100)
-        elif args.model == 'vgg16':
-            net = VGG_CIFAR(cfg_index=16, num_classes=100)
-        elif args.model == 'vgg19':
-            net = VGG_CIFAR(cfg_index=19, num_classes=100)
-        else:
-            print('no model')    
-    
-    net = net.cuda()
-    if args.pretrained == 1:
-        model_path = project_dir / 'ckpt' / 'retrained' / args.model / 'seed_0_acc_49.65.pth'
-        load_model_pytorch(net, model_path, args.model)
+        net = net.cuda()
+        if args.pretrained == 1:
+            model_path = project_dir / 'ckpt' / 'retrained' / args.model / 'seed0_acc85.25_epoch54_2021-10-13 18-09-46.pth'
+            load_model_pytorch(net, model_path, args.model)
 
     list_allclasses = list(range(total_classes))
     unlearn_listclass = [args.unlearn_class]

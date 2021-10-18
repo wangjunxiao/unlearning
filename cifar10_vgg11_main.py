@@ -73,22 +73,10 @@ def load_model_CIFAR10(args, model_path):
         net = ResNet_CIFAR(depth=56, num_classes=10)
     elif args.model == 'resnet20':
         net = ResNet_CIFAR(depth=20, num_classes=10)
-    elif args.model == 'vgg':
-        net = VGG_CIFAR(num_classes=10)
-    else:
-        print('no model')
-        return
-    net = net.cuda()
-    load_model_pytorch(net, model_path, args.model)
-    return net
-
-def load_model_CIFAR100(args, model_path):
-    if args.model == 'resnet56':
-        net = ResNet_CIFAR(depth=56, num_classes=100)
-    elif args.model == 'resnet20':
-        net = ResNet_CIFAR(depth=20, num_classes=100)
     elif args.model == 'vgg16':
-        net = VGG_CIFAR(cfg_index=16, num_classes=100)
+        net = VGG_CIFAR(cfg_index=16, num_classes=10)
+    elif args.model == 'vgg11':
+        net = VGG_CIFAR(cfg_index=11, num_classes=10)
     else:
         print('no model')
         return
@@ -99,15 +87,15 @@ def load_model_CIFAR100(args, model_path):
 def Class_Pruning():
     '''configuration'''
     args = parser.parse_args()
-    args.dataset = 'cifar100'
+    args.dataset = 'cifar10'
     project_dir = Path(__file__).resolve().parent
     args.dataroot = project_dir / 'data'
-    args.model = 'vgg16'
+    args.model = 'vgg11'
     args.gpus = 0
     args.j = 4
-    args.stop_batch = 20
-    args.unlearn_class = 99
-    args.sparsity = 0.15  #cifar10 args.sparsity = 0.05
+    args.stop_batch = 1
+    args.unlearn_class = 9
+    args.sparsity = 0.1   #cifar10 args.sparsity = 0.05
     args.coe = 0
     args.epochs = 10
     args.lr = 0.1
@@ -115,13 +103,13 @@ def Class_Pruning():
     args.label_smoothing = 0.0 
     args.warmup_step = 0
     args.warm_lr = 10e-5
-    args.model_file = 'seed0_acc50.28_epoch18_2021-10-14 16-18-36.pth'
+    args.model_file = 'seed0_acc85.07_epoch8_2021-10-12 11-34-27.pth'
     print(args)
     
     setup_seed(args.seed)
-    model_path = project_dir / 'ckpt' / args.model / 'cifar100' / args.model_file 
-    pruned_save_info = project_dir / 'ckpt' / 'pruned' / args.model / 'cifar100'
-    finetuned_save_info = project_dir / 'ckpt' / 'finetuned' / args.model / 'cifar100'   
+    model_path = project_dir / 'ckpt' / args.model / args.model_file
+    pruned_save_info = project_dir / 'ckpt' / 'pruned' / args.model
+    finetuned_save_info = project_dir / 'ckpt' / 'finetuned' / args.model   
     
     if args.dataset == 'cifar10':
         '''load data and model'''
@@ -141,25 +129,6 @@ def Class_Pruning():
         testset = torchvision.datasets.CIFAR10(root=args.dataroot, train=False, download=False, transform=transform_test)
         net = load_model_CIFAR10(args, model_path)
         total_classes = 10 # [0-9]
-    
-    if args.dataset == 'cifar100':
-        '''load data and model'''
-        mean=[129.3 / 255, 124.1 / 255, 112.4 / 255]
-        std=[68.2 / 255, 65.4 / 255, 70.4 / 255]
-        transform_train = transforms.Compose([
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize(mean, std),
-            ])
-        transform_test = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(mean,std)
-            ])
-        trainset = torchvision.datasets.CIFAR100(root=args.dataroot, train=True, download=False, transform=transform_train)
-        testset = torchvision.datasets.CIFAR100(root=args.dataroot, train=False, download=False, transform=transform_test)
-        net = load_model_CIFAR100(args, model_path)
-        total_classes = 100 # [0-99]
         
     #trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=False, num_workers=4)
     train_all_loader = torch.utils.data.DataLoader(trainset, batch_size=args.search_batch_size, shuffle=False, num_workers=4)
@@ -204,7 +173,7 @@ def Class_Pruning():
                                            time.strftime("%Y-%m-%d %H-%M-%S", time.localtime())+
                                             '_mask.pth')
     pruner.export_model(pruned_model_path, pruned_mask_path)
-    pruned_net = load_model_CIFAR100(args, pruned_model_path)
+    pruned_net = load_model_CIFAR10(args, pruned_model_path)
     
     '''test after pruning'''
     print('*'*5+'testing in unlearn_data'+'*'*12)

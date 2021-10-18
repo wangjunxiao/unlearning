@@ -76,11 +76,11 @@ def Retraining():
     args.dataset = 'cifar100'
     project_dir = Path(__file__).resolve().parent
     args.dataroot = project_dir / 'data'
-    args.model = 'vgg19'
+    args.model = 'resnet32'
     args.pretrained = 0
     args.unlearn_class = 99
     args.gpus = 0
-    args.j = 8
+    args.j = 4
     args.epochs = 100
     args.lr = 0.1
     args.save_acc = 0.0
@@ -141,10 +141,10 @@ def Retraining():
             net = ResNet_CIFAR(depth=56, num_classes=100)
         elif args.model == 'resnet20':
             net = ResNet_CIFAR(depth=20, num_classes=100)
-        elif args.model == 'vgg16':
-            net = VGG_CIFAR(cfg_index=16, num_classes=100)
-        elif args.model == 'vgg19':
-            net = VGG_CIFAR(cfg_index=19, num_classes=100)
+        elif args.model == 'resnet32':
+            net = ResNet_CIFAR(depth=32, num_classes=100)
+        elif args.model == 'vgg':
+            net = VGG_CIFAR(num_classes=100)
         else:
             print('no model')    
     
