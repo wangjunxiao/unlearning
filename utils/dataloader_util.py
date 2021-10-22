@@ -8,7 +8,7 @@ from pathlib import Path
 def generate(dataset, list_classes:list):
     labels = []
     for label_id in list_classes:
-        labels.append(list(dataset.classes)[label_id])
+        labels.append(list(dataset.classes)[int(label_id)])
     #print(labels)
     
     sub_dataset = []
