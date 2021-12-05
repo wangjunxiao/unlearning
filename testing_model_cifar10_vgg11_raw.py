@@ -66,7 +66,7 @@ def Testing():
             transforms.Normalize(mean,std)
             ])
         total_classes = 10 # [0-9]
-        testset = torchvision.datasets.CIFAR10(root=args.dataroot, train=False, download=False, transform=transform_test)
+        testset = torchvision.datasets.CIFAR10(root=args.dataroot, train=False, download=True, transform=transform_test)
 
         if args.model == 'resnet56':
             net = ResNet_CIFAR(depth=56, num_classes=10)
